@@ -1,3 +1,4 @@
+![Topology Diagram](https://github.com/furkangurses/CNNA-Lab-ARP-and-MAC-Address-Learning-in-a-LAN/blob/main/ccna%20lab%20arp.PNG?raw=true)
 CCNA Lab 02 – ARP and MAC Address Learning in a LAN
 📌 Objective
 
