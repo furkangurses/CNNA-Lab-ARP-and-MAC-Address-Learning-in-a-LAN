@@ -1,221 +1,276 @@
 ![Topology Diagram](https://github.com/furkangurses/CNNA-Lab-ARP-and-MAC-Address-Learning-in-a-LAN/blob/main/ccna%20lab%20arp.PNG?raw=true)
-CCNA Lab – ARP and MAC Address Learning in a LAN
-📌 Objective
+# CCNA Lab – ARP and MAC Address Learning in a LAN
 
-The purpose of this lab is to understand how communication works inside a Layer 2 LAN when MAC address tables and ARP tables are initially empty.
+---
+
+## 🎯 Lab Objective
+
+The purpose of this lab is to understand how communication works inside a **Layer 2 LAN** when:
+
+- MAC address tables are initially empty
+- ARP tables are initially empty
 
 This lab demonstrates:
 
-How ARP resolves an IP address to a MAC address
+- How ARP resolves an IP address to a MAC address
+- How a switch dynamically learns MAC addresses
+- The difference between broadcast and unicast traffic
+- How ICMP (ping) works after ARP resolution
+- How to verify and clear MAC address tables on a switch
 
-How a switch dynamically learns MAC addresses
+> The focus of this lab is understanding Ethernet switching behavior, not memorizing commands.
 
-The difference between broadcast and unicast traffic
+---
 
-How ICMP (ping) works after ARP resolution
+## 🌐 Topology Overview
 
-How to verify and clear MAC address tables on a switch
+- 2 Layer 2 switches (**SW1**, **SW2**)  
+- 4 PCs (**PC1–PC4**)  
+- Network: `192.168.1.0/24`  
+- Each switch connects to 2 PCs  
+- Switches connected via Gigabit link  
 
-The focus of this lab is not command memorization, but understanding how Ethernet switching actually behaves.
+### Initial State
 
-🖥 Topology
+- All switches have **empty MAC address tables**
+- All PCs have **empty ARP tables**
 
-2 Layer 2 switches (SW1, SW2)
+---
 
-4 PCs (PC1–PC4)
+## 🚦 Traffic Generation
 
-Single LAN network: 192.168.1.0/24
+To generate traffic, the following command was used on **PC1**:
 
-Each switch connects to 2 PCs
-
-Switches connected via a Gigabit link
-
-At the beginning of the lab:
-
-All switches have empty MAC address tables
-
-All PCs have empty ARP tables
-
-🚦 Traffic Generation
-
-To generate network traffic, the following command was used on PC1:
-
+```bash
 ping 192.168.1.3
+```
 
-Why?
+### Why?
 
-Because without traffic:
+Without traffic:
 
-Switches cannot learn MAC addresses
+- Switches cannot learn MAC addresses  
+- ARP tables remain empty  
 
-ARP tables remain empty
+Ping acts as a trigger to initiate:
 
-Ping was used as a trigger to initiate ARP resolution and ICMP communication.
+- ARP resolution  
+- ICMP communication  
 
-🔄 What Happens Step-by-Step
-1️⃣ ARP Request (Broadcast)
+---
+
+## 🔄 Step-by-Step Packet Flow
+
+---
+
+### 1️⃣ ARP Request (Broadcast)
 
 PC1 wants to ping PC3.
 
-PC1 knows PC3’s IP address but does not know its MAC address.
+- PC1 knows PC3’s IP address
+- PC1 does NOT know PC3’s MAC address
 
 So PC1 sends an ARP request:
 
-Destination MAC: FFFF.FFFF.FFFF (Broadcast)
+- Destination MAC: `FFFF.FFFF.FFFF` (Broadcast)
+- Question: *Who has 192.168.1.3?*
 
-Question: “Who has 192.168.1.3?”
+#### Switch Behavior
 
-Switch behavior:
+- Learns **PC1’s MAC** from source MAC field  
+- Floods broadcast frame out all ports except incoming  
 
-Learns PC1’s MAC address from the source field
+All devices receive it, but only **PC3 replies**.
 
-Floods the broadcast frame to all ports except the incoming one
+---
 
-All devices receive it, but only PC3 replies.
+### 2️⃣ ARP Reply (Unicast)
 
-2️⃣ ARP Reply (Unicast)
+PC3 responds directly to PC1:
 
-PC3 sends an ARP reply directly to PC1:
+- Unicast frame  
+- Contains PC3’s MAC address  
 
-Unicast frame
+#### Switch Behavior
 
-Contains PC3’s MAC address
+- Learns **PC3’s MAC** from source field  
+- Forwards frame only toward PC1  
 
-Switch behavior:
+PC1 updates its ARP table:
 
-Learns PC3’s MAC address from the source field
-
-Forwards the frame only toward PC1
-
-Now PC1 adds this entry to its ARP table:
-
+```
 192.168.1.3 → PC3 MAC
+```
 
-3️⃣ ICMP Echo Request / Reply
+---
 
-After MAC resolution:
+### 3️⃣ ICMP Echo Request / Reply
 
-PC1 sends ICMP Echo Request (unicast)
+After ARP resolution:
 
-Switch forwards based on MAC table
+- PC1 sends ICMP Echo Request (unicast)  
+- Switch forwards based on MAC table  
+- PC3 sends ICMP Echo Reply (unicast)  
 
-PC3 replies with ICMP Echo Reply (unicast)
+From this point forward:
 
-From this point forward, communication becomes direct and efficient.
+✔ Communication is direct  
+✔ No more broadcasts required  
+✔ Efficient unicast forwarding occurs  
 
-🧠 Key Switching Logic Demonstrated
+---
+
+## 🧠 Key Switching Logic Demonstrated
 
 This lab proves that a Layer 2 switch:
 
-Learns MAC addresses from the source MAC field
+- Learns MAC addresses from the **source MAC field**
+- Does NOT use IP addresses for forwarding
+- Floods:
+  - Broadcast frames
+  - Unknown unicast frames
+- Forwards known unicast traffic only to the correct port
 
-Does not use IP addresses for forwarding
+---
 
-Floods:
+## 📝 Switch Verification Commands
 
-Broadcast frames
+---
 
-Unknown unicast frames
+### View MAC Address Table
 
-Forwards known unicast traffic only to the correct port
-
-🖥 Switch Verification Commands Used
-View MAC Address Table
+```bash
 show mac address-table
+```
 
+#### Purpose
 
-Purpose:
+- Verify which MAC address is learned on which interface  
+- Confirm dynamic learning  
 
-Verify which MAC address is learned on which interface
+Displays:
 
-Confirm dynamic learning
+- VLAN  
+- MAC address  
+- Type (dynamic)  
+- Port  
 
-This command displays:
+---
 
-VLAN
+### Clear MAC Address Table
 
-MAC address
-
-Type (dynamic)
-
-Port
-
-Clear MAC Address Table
+```bash
 clear mac address-table dynamic
+```
 
+#### Purpose
 
-Purpose:
+- Remove dynamically learned MAC addresses  
+- Force the switch to relearn addresses  
 
-Remove all dynamically learned MAC addresses
+Useful when:
 
-Force the switch to relearn addresses
+- MAC entries are stale  
+- A device changes switch ports  
+- Testing learning behavior again  
 
-Useful in troubleshooting scenarios when:
+---
 
-MAC entries are stale
+## 💻 PC Verification Command
 
-A device changes ports
-
-Testing learning behavior again
-
-💻 PC Verification Command
+```bash
 arp -a
+```
 
+### Purpose
 
-Purpose:
+- Verify IP-to-MAC mappings  
+- Confirm ARP resolution completed successfully  
 
-Verify IP-to-MAC mappings
+---
 
-Confirm ARP resolution completed successfully
+## 🔎 Key Observations
 
-🔎 Key Observations
+- First ping may fail due to ARP process  
+- ARP request = broadcast  
+- ARP reply = unicast  
+- Switch learns MAC addresses dynamically  
+- After learning, traffic becomes efficient unicast  
 
-First ping may fail due to ARP process
+---
 
-ARP request is broadcast
+## 🌍 Real-World Application
 
-ARP reply is unicast
+This lab directly applies to real troubleshooting scenarios:
 
-Switch learns MAC addresses dynamically
+- A device cannot reach another device in the same LAN  
+- Investigating why ping fails  
+- Identifying which device is connected to which switch port  
+- Diagnosing MAC learning issues  
+- Clearing stale MAC entries  
 
-After learning, traffic becomes efficient unicast forwarding
+### In IT Support
 
-🏢 Real-World Application
+- Verify gateway MAC resolution  
+- Troubleshoot local LAN communication issues  
 
-This lab directly applies to real troubleshooting situations such as:
+### In Junior Network Roles
 
-A device cannot reach another device in the same LAN
+- Locate devices by MAC address  
+- Validate switch learning behavior  
+- Perform Layer 2 troubleshooting  
 
-Investigating why ping fails
+---
 
-Identifying which device is connected to which switch port
+## 🛠️ Skills Gained
 
-Diagnosing MAC learning issues
+- Understanding ARP inside a LAN  
+- Understanding dynamic MAC learning  
+- Differentiating broadcast vs unicast traffic  
+- Verifying Layer 2 behavior using CLI  
+- Applying Layer 2 logic to troubleshooting  
 
-Clearing stale MAC entries
+---
 
-In IT Support:
+## 🧩 Troubleshooting Notes
 
-Used to verify gateway MAC resolution
+If communication fails:
 
-Used when local network communication fails
+1. Check ARP table:
+```bash
+arp -a
+```
 
-In Junior Network roles:
+2. Check MAC address table:
+```bash
+show mac address-table
+```
 
-Used to locate devices by MAC address
+3. Clear MAC table if needed:
+```bash
+clear mac address-table dynamic
+```
 
-Used to validate switch learning behavior
+Then generate traffic again using:
 
-Used in Layer 2 troubleshooting
+```bash
+ping 192.168.1.3
+```
 
-📝 What I Learned
+---
 
-How ARP enables IP communication inside a LAN
+## 📚 Conclusion
 
-How switches build MAC address tables dynamically
+Understanding Layer 2 behavior is critical for network troubleshooting.
 
-The difference between broadcast and unicast traffic
+Without mastering:
 
-How to verify Layer 2 behavior using CLI
+- ARP
+- MAC learning
+- Broadcast vs unicast logic
 
-Why understanding Layer 2 is critical for troubleshooting
+It becomes difficult to diagnose real-world LAN issues effectively.
+
+This lab builds strong foundational knowledge for CCNA-level networking and real IT environments.
+
+---
